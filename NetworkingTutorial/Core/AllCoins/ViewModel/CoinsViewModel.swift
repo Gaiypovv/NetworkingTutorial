@@ -25,7 +25,13 @@ class CoinsViewModel: ObservableObject {
             print("Did recieve data \(data)")
             guard let data = data else { return }
             guard let jsonObject = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
-            print("JSON \(jsonObject)")
+            guard let value = jsonObject["bitcoin"] as? [String: Int] else { return }
+            guard let price = value["usd"] else { return }
+         
+            DispatchQueue.main.async {
+                self.coin = "Bitcoin"
+                self.price = "$ \(price)"
+            }
             
         }.resume()
         
