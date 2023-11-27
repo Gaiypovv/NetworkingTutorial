@@ -11,6 +11,34 @@ class CoinDataService {
     
     private let urlString = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=20&page=1&sparkline=false&price_change_percentage=24h&locale=en"
     
+    func fetchCoins() async throws -> [Coin] {
+        guard let url = URL(string: urlString) else { return [] }
+        
+        let (data, response) = try await URLSession.shared.data(from: url)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+             throw CoinAPIError.requestFailed(description: "Request failded")
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            throw CoinAPIError.invalidStatusCode(statusCode: httpResponse.statusCode)
+        }
+        
+        do {
+            let coins = try JSONDecoder().decode([Coin].self, from: data)
+            return coins
+        } catch {
+            print("DEBUG: Error\(error)")
+            throw error as? CoinAPIError ?? .unknowError(error: error)
+        }
+        
+    }
+    
+}
+
+//MARK: - Complition Handler
+
+extension CoinDataService {
     func fetchCoinsWithResults(completion: @escaping(Result<[Coin], CoinAPIError>) -> Void) {
         guard let url = URL(string: urlString) else { return }
         
@@ -44,29 +72,6 @@ class CoinDataService {
         }.resume()
     }
     
-    func fetchCoins(complition: @escaping([Coin]?, Error?) -> Void) {
-        guard let url = URL(string: urlString) else { return }
-        
-        URLSession.shared.dataTask(with: url) { data, response, error in
-            if let error = error {
-                complition(nil, error)
-                return
-            }
-            
-            guard let data = data else { return }
-        
-            guard let coins = try? JSONDecoder().decode([Coin].self, from: data) else {
-                print("DEBUG: Failed to decode the coins")
-                return
-            }
-            
-            for coin in coins {
-                print("DEBUG: Coins decoded \(coin.name)")
-            }
-            
-            complition(coins, nil)
-        }.resume()
-    }
     
     func fetchPrice(coin: String, completion: @escaping(Double) -> Void) {
         let urlSting = "https://api.coingecko.com/api/v3/simple/price?ids=\(coin)&vs_currencies=usd"
@@ -107,3 +112,4 @@ class CoinDataService {
         }.resume()
     }
 }
+
