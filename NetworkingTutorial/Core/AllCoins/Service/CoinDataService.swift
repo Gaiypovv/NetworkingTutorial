@@ -7,20 +7,12 @@
 
 import Foundation
 
-class CoinDataService {
-    
-    private let urlString = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=20&page=1&sparkline=false&price_change_percentage=24h&locale=en"
-    
-    
-    func fetchCoins() async throws -> [Coin] {
-        return try await fetchData(as: [Coin].self, endpoint: urlString)
-    }
-    
-    func fetchCoinDetails(id: String) async throws -> CoinDetails? {
-        let detailsUrlString = "https://api.coingecko.com/api/v3/coins/\(id)?tickers=false"
-        return try await fetchData(as: CoinDetails.self, endpoint: detailsUrlString)
-    }
-    private func fetchData<T: Decodable>(as type: T.Type, endpoint: String) async throws -> T {
+protocol HTTPDataDownloader {
+    func fetchData<T: Decodable>(as type: T.Type, endpoint: String) async throws -> T
+}
+
+extension HTTPDataDownloader {
+    func fetchData<T: Decodable>(as type: T.Type, endpoint: String) async throws -> T {
         guard let url = URL(string: endpoint) else {
             throw CoinAPIError.requestFailed(description: "Invalid URL")
         }
@@ -42,6 +34,22 @@ class CoinDataService {
             throw error as? CoinAPIError ?? .unknowError(error: error)
         }
     }
+}
+
+class CoinDataService: HTTPDataDownloader {
+    
+    private let urlString = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=20&page=1&sparkline=false&price_change_percentage=24h&locale=en"
+    
+    
+    func fetchCoins() async throws -> [Coin] {
+        return try await fetchData(as: [Coin].self, endpoint: urlString)
+    }
+    
+    func fetchCoinDetails(id: String) async throws -> CoinDetails? {
+        let detailsUrlString = "https://api.coingecko.com/api/v3/coins/\(id)?tickers=false"
+        return try await fetchData(as: CoinDetails.self, endpoint: detailsUrlString)
+    }
+    
 }
 
 //MARK: - Complition Handler
