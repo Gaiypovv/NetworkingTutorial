@@ -10,7 +10,6 @@ import SwiftUI
 struct CoinDetailsView: View {
     let coin: Coin
     @ObservedObject var viewModel: CoinDetailsViewModel
-    @State private var task: Task<(), Never>?
     
     init(coin: Coin) {
         self.coin = coin
@@ -32,12 +31,15 @@ struct CoinDetailsView: View {
                     .padding(.vertical)
             }
         }
-        .onAppear {
-            self.task = Task { await viewModel.fetchCoinDetails() }
+        .task {
+            await viewModel.fetchCoinDetails()
         }
-        .onDisappear() {
-            task?.cancel()
-        }
+//        .onAppear {
+//            self.task = Task { await viewModel.fetchCoinDetails() }
+//        }
+//        .onDisappear() {
+//            task?.cancel()
+//        }
         .padding()
     }
 }
