@@ -10,6 +10,7 @@ import SwiftUI
 struct CoinDetailsView: View {
     let coin: Coin
     @ObservedObject var viewModel: CoinDetailsViewModel
+    @State private var task: Task<(), Never>?
     
     init(coin: Coin) {
         self.coin = coin
@@ -17,8 +18,8 @@ struct CoinDetailsView: View {
     }
     
     var body: some View {
-        if let details = viewModel.coinDetails {
-            VStack(alignment: .leading) {
+        VStack(alignment: .leading) {
+            if let details = viewModel.coinDetails {
                 Text(details.name)
                     .fontWeight(.semibold)
                     .font(.subheadline)
@@ -30,8 +31,14 @@ struct CoinDetailsView: View {
                     .font(.footnote)
                     .padding(.vertical)
             }
-            .padding()
         }
+        .onAppear {
+            self.task = Task { await viewModel.fetchCoinDetails() }
+        }
+        .onDisappear() {
+            task?.cancel()
+        }
+        .padding()
     }
 }
 
