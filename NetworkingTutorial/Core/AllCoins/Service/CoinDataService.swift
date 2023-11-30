@@ -13,30 +13,14 @@ class CoinDataService {
     
     
     func fetchCoins() async throws -> [Coin] {
-        let data = try await fetchData(endpoint: urlString)
-        
-        do {
-            let coins = try JSONDecoder().decode([Coin].self, from: data)
-            return coins
-        } catch {
-            print("DEBUG: Error\(error)")
-            throw error as? CoinAPIError ?? .unknowError(error: error)
-        }
+        return try await fetchData(as: [Coin].self, endpoint: urlString)
     }
     
     func fetchCoinDetails(id: String) async throws -> CoinDetails? {
         let detailsUrlString = "https://api.coingecko.com/api/v3/coins/\(id)?tickers=false"
-        let data = try await fetchData(endpoint: detailsUrlString)
-        
-        do {
-            let details = try JSONDecoder().decode(CoinDetails.self, from: data)
-            return details
-        } catch {
-            print("DEBUG: Error\(error)")
-            throw error as? CoinAPIError ?? .unknowError(error: error)
-        }
+        return try await fetchData(as: CoinDetails.self, endpoint: detailsUrlString)
     }
-    private func fetchData(endpoint: String) async throws -> Data {
+    private func fetchData<T: Decodable>(as type: T.Type, endpoint: String) async throws -> T {
         guard let url = URL(string: endpoint) else {
             throw CoinAPIError.requestFailed(description: "Invalid URL")
         }
@@ -51,14 +35,12 @@ class CoinDataService {
             throw CoinAPIError.invalidStatusCode(statusCode: httpResponse.statusCode)
         }
         
-        return data
-//        do {
-//            let details = try JSONDecoder().decode(CoinDetails.self, from: data)
-//            return details
-//        } catch {
-//            print("DEBUG: Error\(error)")
-//            throw error as? CoinAPIError ?? .unknowError(error: error)
-//        }
+        do {
+            return try JSONDecoder().decode(type, from: data)
+        } catch {
+            print("DEBUG: Error\(error)")
+            throw error as? CoinAPIError ?? .unknowError(error: error)
+        }
     }
 }
 
