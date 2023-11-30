@@ -34,12 +34,6 @@ struct CoinDetailsView: View {
         .task {
             await viewModel.fetchCoinDetails()
         }
-//        .onAppear {
-//            self.task = Task { await viewModel.fetchCoinDetails() }
-//        }
-//        .onDisappear() {
-//            task?.cancel()
-//        }
         .padding()
     }
 }

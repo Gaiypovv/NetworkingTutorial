@@ -13,17 +13,7 @@ class CoinDataService {
     
     
     func fetchCoins() async throws -> [Coin] {
-        guard let url = URL(string: urlString) else { return [] }
-        
-        let (data, response) = try await URLSession.shared.data(from: url)
-        
-        guard let httpResponse = response as? HTTPURLResponse else {
-             throw CoinAPIError.requestFailed(description: "Request failded")
-        }
-        
-        guard httpResponse.statusCode == 200 else {
-            throw CoinAPIError.invalidStatusCode(statusCode: httpResponse.statusCode)
-        }
+        let data = try await fetchData(endpoint: urlString)
         
         do {
             let coins = try JSONDecoder().decode([Coin].self, from: data)
@@ -36,8 +26,20 @@ class CoinDataService {
     
     func fetchCoinDetails(id: String) async throws -> CoinDetails? {
         let detailsUrlString = "https://api.coingecko.com/api/v3/coins/\(id)?tickers=false"
+        let data = try await fetchData(endpoint: detailsUrlString)
         
-        guard let url = URL(string: detailsUrlString) else { return nil  }
+        do {
+            let details = try JSONDecoder().decode(CoinDetails.self, from: data)
+            return details
+        } catch {
+            print("DEBUG: Error\(error)")
+            throw error as? CoinAPIError ?? .unknowError(error: error)
+        }
+    }
+    private func fetchData(endpoint: String) async throws -> Data {
+        guard let url = URL(string: endpoint) else {
+            throw CoinAPIError.requestFailed(description: "Invalid URL")
+        }
         
         let (data, response) = try await URLSession.shared.data(from: url)
         
@@ -49,15 +51,15 @@ class CoinDataService {
             throw CoinAPIError.invalidStatusCode(statusCode: httpResponse.statusCode)
         }
         
-        do {
-            let details = try JSONDecoder().decode(CoinDetails.self, from: data)
-            return details
-        } catch {
-            print("DEBUG: Error\(error)")
-            throw error as? CoinAPIError ?? .unknowError(error: error)
-        }
+        return data
+//        do {
+//            let details = try JSONDecoder().decode(CoinDetails.self, from: data)
+//            return details
+//        } catch {
+//            print("DEBUG: Error\(error)")
+//            throw error as? CoinAPIError ?? .unknowError(error: error)
+//        }
     }
-    
 }
 
 //MARK: - Complition Handler
